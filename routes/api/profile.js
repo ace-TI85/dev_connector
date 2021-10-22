@@ -201,8 +201,73 @@ router.get('/user/:user_id', async (request, response) => {
   check('title', 'Title is required')
     .not()
     .isEmpty(),
+    check('company', 'Company is required')
+    .not()
+    .isEmpty(),
+    check('from', 'From Date is required')
+    .not()
+    .isEmpty()
 ]], async (request, response) => {
+  const errors = validationResult(request);
+  if (!errors.isEmpty()){
+    return response.status(400).json({ errors: errors.array() })
+  }
 
+  const {
+    title,
+    company,
+    location,
+    from,
+    to,
+    current,
+    description
+  } = request.body;
+
+  const newExperience = {
+    title: title,
+    company: company,
+    location: location,
+    from: from,
+    to: to,
+    current: current,
+    description: description
+  }
+
+  try {
+    const profile = await Profile.findOne({ user: request.user.id });
+    profile.experience.unshift(newExperience);
+    await profile.save();
+
+    response.json(profile);
+  } catch (error) {
+    console.log(error.message);
+    response.status(500).send('Internal server error')
+  }
 });
+
+/**
+ * @route       DELETE api/profile/experience/:exp_id
+ * @description Delete experience from profile
+ * @access      Private
+ */
+
+router.delete('/experience/:exp_id', auth, async (request, response) => {
+  try {
+    const profile = await Profile.findOne({ user: request.user.id });
+
+    // get remove index 
+    const removeIndex = profile.experience.map(item => item.id).indexOf(request.params.exp_id);
+
+    profile.experience.splice(removeIndex, 1);
+
+    await profile.save();
+
+    response.json(profile);
+  } catch (error) {
+    console.log(error.message);
+    response.status(500).send('Internal server error')
+  }
+
+})
 
 module.exports = router;
