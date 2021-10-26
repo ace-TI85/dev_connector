@@ -2,11 +2,6 @@ const mongoose = require('mongoose');
 const config = require('config');
 const db = config.get('mongoURI');
 
-// // gives promise - need to use .then().catch() - instead use async () => {}
-// mongoose.connect(db)
-//   .then()
-//   .catch();
-
 const connectDB = async () => {
   try {
     await mongoose.connect(db, {
@@ -14,8 +9,8 @@ const connectDB = async () => {
       // useCreateIndex: true
     });
     console.log("MongoDB connected..");
-  } catch (err) {
-    console.log(err.message);
+  } catch (error) {
+    console.log(error.message);
     // Exit process with failure
     process.exit(1);
   }

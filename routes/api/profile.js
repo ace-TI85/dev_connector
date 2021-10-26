@@ -1,4 +1,6 @@
 const express = require('express');
+const npm_request = require('request');
+const config = require('config');
 const router = express.Router();
 const auth = require('../../middleware/auth');
 const { check, validationResult } = require('express-validator')
@@ -193,7 +195,7 @@ router.get('/user/:user_id', async (request, response) => {
 
 /**
  * @route       PUT api/profile/experience
- * @description Add profile experience
+ * @description Add experience to profile
  * @access      Private
  */
 
@@ -207,7 +209,7 @@ router.get('/user/:user_id', async (request, response) => {
     check('from', 'From Date is required')
     .not()
     .isEmpty()
-]], async (request, response) => {
+ ]], async (request, response) => {
   const errors = validationResult(request);
   if (!errors.isEmpty()){
     return response.status(400).json({ errors: errors.array() })
@@ -251,15 +253,70 @@ router.get('/user/:user_id', async (request, response) => {
  * @access      Private
  */
 
-router.delete('/experience/:exp_id', auth, async (request, response) => {
+router.delete('/experience/:exp_id', auth, async (req, res) => {
+  try {
+    const foundProfile = await Profile.findOne({ user: req.user.id });
+
+    foundProfile.experience = foundProfile.experience.filter(
+      (exp) => exp._id.toString() !== req.params.exp_id
+    );
+
+    await foundProfile.save();
+    return res.status(200).json(foundProfile);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ msg: 'Server error' });
+  }
+});
+
+/**
+ * @route       PUT api/profile/education
+ * @description Add education to profile
+ * @access      Private
+ */
+
+ router.put('/education', [auth, [
+    check('school', 'School is required')
+    .not()
+    .isEmpty(),
+    check('degree', 'Degree is required')
+    .not()
+    .isEmpty(),
+    check('fieldofstudy', 'Field of study is required')
+    .not()
+    .isEmpty(),
+    check('from', 'From Date is required')
+    .not()
+    .isEmpty()
+  ]], async (request, response) => {
+  const errors = validationResult(request);
+  if (!errors.isEmpty()){
+    return response.status(400).json({ errors: errors.array() })
+  }
+
+  const {
+    school,
+    degree,
+    fieldofstudy,
+    from,
+    to,
+    current,
+    description
+  } = request.body;
+
+  const newEducation = {
+    school: school,
+    degree: degree,
+    fieldofstudy: fieldofstudy,
+    from: from,
+    to: to,
+    current: current,
+    description: description
+  }
+
   try {
     const profile = await Profile.findOne({ user: request.user.id });
-
-    // get remove index 
-    const removeIndex = profile.experience.map(item => item.id).indexOf(request.params.exp_id);
-
-    profile.experience.splice(removeIndex, 1);
-
+    profile.education.unshift(newEducation);
     await profile.save();
 
     response.json(profile);
@@ -267,7 +324,60 @@ router.delete('/experience/:exp_id', auth, async (request, response) => {
     console.log(error.message);
     response.status(500).send('Internal server error')
   }
+});
 
+/**
+ * @route       DELETE api/profile/education/:edu_id
+ * @description Delete education from profile
+ * @access      Private
+ */
+
+ router.delete('/education/:edu_id', auth, async (req, res) => {
+  try {
+    const foundProfile = await Profile.findOne({ user: req.user.id });
+    foundProfile.education = foundProfile.education.filter(
+      (edu) => edu._id.toString() !== req.params.edu_id
+    );
+    await foundProfile.save();
+    return res.status(200).json(foundProfile);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ msg: 'Server error' });
+  }
+});
+
+/**
+ * @route       GET api/profile/github/:username
+ * @description Get user repos from github
+ * @access      Public
+ */
+
+router.get('/github/:username', async (request, response) => {
+  
+  try {
+    const gitURL = `https://api.github.com/users/${request.params.username}/repos?per_page=5&sort=created:asc&client_id=${config.get('githubClientId')}&client_secret=${config.get('githubSecret')}`;
+
+    const options = {
+      uri: gitURL,
+      method: 'GET',
+      headers: { 'user-agent': 'node.js' }
+    };
+
+    npm_request(options, (error, res, body) => {
+      if (error){
+        console.log(error)
+      }
+
+      if (res.statusCode !== 200) {
+        return response.status(404).json({ msg: 'No Github Profile Found' });
+      }
+
+      response.json(JSON.parse(body));
+    })
+  } catch (error) {
+    console.log(error.message);
+    response.status(500).send('Server Error')
+  }
 })
 
 module.exports = router;
