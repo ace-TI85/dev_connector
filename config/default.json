@@ -1,7 +1,7 @@
 {
-  "mongoURI": "mongodb+srv://jonathan_tosio:<REDACTED>@cluster0.a2i26.mongodb.net/myFirstDatabase?retryWrites=true&w=majority",
+  "mongoURI": "mongodb+srv://jonathan_tosio:<redacted>@cluster0.a2i26.mongodb.net/myFirstDatabase?retryWrites=true&w=majority",
   "jwtSecret": "mysecrettoken",
-  "githubClientId": "<REDACTED>",
-  "githubSecret": "<REDACTED>"
+  "githubClientId": "<redacted>",
+  "githubSecret": "<redacted>"
 }
 

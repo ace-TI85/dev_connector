@@ -1,3 +1,4 @@
+const { response } = require('express');
 const express = require('express');
 const router = express.Router();
 const { check, validationResult } = require('express-validator');
@@ -207,5 +208,43 @@ router.put('/like/:id', auth, async (request, response) => {
       response.status(500).send({ msg: 'Server Error' });
     }
 });
+
+/**
+ * @route       DELETE api/posts/comment/:id/:comment_id
+ * @description Delete a comment on a post
+ * @access      Private
+ */
+
+router.delete('/comment/:id/:comment_id', auth, async (request, response) => {
+  try {
+    const post = await Post.findById(request.params.id);
+
+    // get comment from post
+    const comment = post.comments.find(comment => comment.id === request.params.comment_id)
+
+    if (!comment) {
+      return response.status(404).json({ msg: "Comment not found." });
+    }
+
+    // check user
+    if (comment.user.toString() !== request.user.id) {
+      return response.status(401).json({ msg: "User not authorised." });
+    }
+
+    // get remove index
+    const removeIndex = post.comments
+                          .map(comment => comment.user.toString())
+                          .indexOf(request.user.id);
+
+    post.comments.splice(removeIndex, 1);
+    await post.save();
+
+    response.json(post.comments);
+
+  } catch (error) {
+    console.log(error.message);
+    response.status(500).json({ msg: "Server Error." })
+  }
+})
 
 module.exports = router;
