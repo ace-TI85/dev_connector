@@ -9,7 +9,7 @@ import { register } from '../../actions/auth';
 import propTypes from 'prop-types';
 
 
-export const Register = ({ setAlert }) => {
+export const Register = ({ setAlert, register }) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -29,7 +29,7 @@ export const Register = ({ setAlert }) => {
     if (password !== password2) {
       setAlert('Passwords do not match', 'danger');
     } else {
-      console.log('Success!');
+      register({ name, email, password });
     }
   };
 
@@ -47,6 +47,7 @@ export const Register = ({ setAlert }) => {
           name="name"
           value={name}
           onChange = {e => onChange(e)}
+          required
         />
         </div>
         <div className="form-group">
@@ -56,7 +57,7 @@ export const Register = ({ setAlert }) => {
             name="email"
             value={email} 
             onChange = {e => onChange(e)}
-            required 
+            required
           />
           <small className="form-text">This site uses Gravatar, so if you want profile image, use a Gravatar email</small>
         </div>
@@ -67,7 +68,7 @@ export const Register = ({ setAlert }) => {
             name="password" 
             value={password} 
             onChange = {e => onChange(e)}
-            minLength="6" 
+            minLength = {6}
           />
         </div>
         <div className="form-group">
@@ -77,7 +78,7 @@ export const Register = ({ setAlert }) => {
             name="password2" 
             value={password2}
             onChange = {e => onChange(e)}
-            minLength="6" 
+            minLength = {6}
           />
         </div>
         <input 
@@ -92,7 +93,11 @@ export const Register = ({ setAlert }) => {
 }
 
 Register.propTypes = {
-  setAlert: propTypes.func.isRequired
+  setAlert: propTypes.func.isRequired,
+  register: propTypes.func.isRequired
 }
 
-export default connect(null, { setAlert })(Register)
+export default connect(
+  null, 
+  { setAlert, register }
+)(Register)
